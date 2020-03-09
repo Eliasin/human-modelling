@@ -1,4 +1,4 @@
-use std::collections::hash_map;
+use std::collections::VecDeque;
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -24,6 +24,66 @@ impl<K: Eq + Hash + Copy> Graph<K> {
         Graph {
             adjacency: hash_map,
         }
+    }
+
+    fn find_path_length_in_came_from(&self, start: K, target: K, came_from: HashMap<K, K>) -> i32 {
+        let mut curr = target;
+        let mut total_length = 0;
+        while curr != start {
+            let last = came_from.get(&curr).unwrap();
+            total_length += self.weight_of(*last, curr).unwrap(); 
+            curr = *last;
+        }
+        total_length
+    }
+
+    pub fn generate_complete_graph(&self) -> Graph<K> {
+        let nodes: Vec<K> = self.adjacency.keys().map(|node| node.clone()).collect();
+        let mut new_graph = Graph::new(nodes.clone());
+
+        for nodeA in &nodes {
+            for nodeB in &nodes {
+                new_graph = new_graph.add_edge(*nodeA, *nodeB, self.dfs(*nodeA, *nodeB));
+            }
+        }
+
+        new_graph
+    }
+
+    pub fn dfs(&self, start: K, target: K) -> Option<i32> {
+        if start == target {
+            return Some(0);
+        }
+        let mut visited = vec!(start);
+        let mut need_visit = VecDeque::new();
+        let mut came_from: HashMap<K, K> = HashMap::new();
+        let mut curr = start;
+
+        for node in self.neighbours_of(curr).unwrap() {
+            if !visited.contains(&node) && !need_visit.contains(&node) {
+                need_visit.push_back(node);
+                came_from.insert(node, curr);
+            }
+        }
+
+        while !need_visit.is_empty() {
+           curr = need_visit.pop_front().unwrap();
+
+            if curr == target {
+                return Some(self.find_path_length_in_came_from(start, target, came_from));
+            }
+
+            for node in self.neighbours_of(curr).unwrap() {
+                if !visited.contains(&node) && !need_visit.contains(&node) {
+                    need_visit.push_back(node);
+                    came_from.insert(node, curr);
+                }
+            }
+
+            visited.push(curr);
+        }
+
+        None
     }
 
     pub fn add_node(&self, new_node: K) -> Graph<K> {
@@ -69,10 +129,10 @@ impl<K: Eq + Hash + Copy> Graph<K> {
         }
     }
 
-    pub fn neighbours_of(&self, node: K) -> Option<hash_map::Keys<'_, K, Option<i32>>> {
+    pub fn neighbours_of(&self, node: K) -> Option<Vec<K>> {
         match self.adjacency.get(&node) {
-            Some(neighbours) => Some(neighbours.keys()),
-            None => None,
+            Some(neighbours) => Some(neighbours.keys().filter(|node| neighbours.get(&node).unwrap().is_some()).map(|node| node.clone()).collect()),
+            None => None
         }
     }
 

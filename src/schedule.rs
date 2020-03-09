@@ -11,6 +11,7 @@ use rand::rngs::ThreadRng;
 use std::hash::Hash;
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct MarkovChain<K> {
     chain: HashMap<K, (Vec<K>, Vec<u32>)>,
     rand: ThreadRng,
@@ -38,8 +39,8 @@ impl<K: Eq + Hash + Copy> MarkovChain<K> {
     }
 }
 
+#[derive(Clone)]
 pub struct Schedule<K> {
-    graph: Graph<K>,
     next_location_decider: MarkovChain<K>,
     when_to_leave_decider: HashMap<K, u32>,
 }
@@ -53,12 +54,10 @@ impl<K: Eq + Hash> Schedule<K> {
     }
 
     pub fn new(
-        graph: Graph<K>,
         next_location_decider: MarkovChain<K>,
         when_to_leave_decider: HashMap<K, u32>,
     ) -> Schedule<K> {
         Schedule {
-            graph: graph,
             next_location_decider: next_location_decider,
             when_to_leave_decider: when_to_leave_decider,
         }
@@ -66,7 +65,7 @@ impl<K: Eq + Hash> Schedule<K> {
 }
 
 impl<K: Eq + Hash + Copy> Behaviour<K> for Schedule<K> {
-    fn next_state(&mut self, current_state: EntityState<K>) -> EntityState<K> {
+    fn next_state(&mut self, current_state: EntityState<K>, graph: &Graph<K>) -> EntityState<K> {
         match current_state {
             Stationary(location, time_spent) => {
                 if self.should_leave(location, time_spent).unwrap() {
@@ -77,7 +76,7 @@ impl<K: Eq + Hash + Copy> Behaviour<K> for Schedule<K> {
                 }
             }
             Traversing(from, to, time_spent) => {
-                let traversal_time = self.graph.weight_of(to, from).unwrap() as u32;
+                let traversal_time = graph.weight_of(from, to).unwrap() as u32;
                 if time_spent >= traversal_time {
                     Stationary(to, 0)
                 } else {
