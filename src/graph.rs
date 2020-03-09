@@ -41,9 +41,9 @@ impl<K: Eq + Hash + Copy> Graph<K> {
         let nodes: Vec<K> = self.adjacency.keys().map(|node| node.clone()).collect();
         let mut new_graph = Graph::new(nodes.clone());
 
-        for nodeA in &nodes {
-            for nodeB in &nodes {
-                new_graph = new_graph.add_edge(*nodeA, *nodeB, self.dfs(*nodeA, *nodeB));
+        for node_a in &nodes {
+            for node_b in &nodes {
+                new_graph = new_graph.add_edge(*node_a, *node_b, self.dfs(*node_a, *node_b));
             }
         }
 
