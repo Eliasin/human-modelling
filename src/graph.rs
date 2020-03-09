@@ -107,9 +107,7 @@ impl<K: Eq + Hash + Copy> Graph<K> {
                     adjacency: new_hash_map,
                 }
             }
-            None => Graph {
-                adjacency: self.adjacency.clone(),
-            },
+            None => panic!()
         }
     }
 
